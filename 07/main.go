@@ -35,6 +35,15 @@ func main() {
 	fmt.Println(array)
 	fmt.Println(slice)
 
+	fmt.Println("len ->", len(slice))
+	slice[0] = 17
+
+	for j := 0; j < len(slice); j++ {
+		slice[j] = slice[j] + 1
+	}
+
+	fmt.Println(slice)
+
 	mapExample()
 }
 
@@ -46,4 +55,8 @@ func mapExample() {
 	stuInfo["003"] = "wangWu"
 
 	fmt.Println(stuInfo)
+
+	for key, value := range stuInfo {
+		fmt.Println("学号：", key, "姓名：", value)
+	}
 }
