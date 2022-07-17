@@ -2,78 +2,62 @@ package main
 
 import (
 	"fmt"
-	"strings"
+	"time"
 )
 
-func strFunc(val []string) string {
-	return strings.Join(val, ",")
-}
+var precent int = 0
+var isEnd = false
 
 func main() {
-	defer fmt.Println("我是最后一个出来的")
-	defer fmt.Println("我是倒数第二个出来的")
-	defer fmt.Println("我是倒数第三个出来的")
+	func(text string) {
+		fmt.Println(text)
+	}("立即使用")
 
-	var list []string
-	list = append(list, "123")
-	list = append(list, "456")
-	res := strFunc(list)
+	stringLoop := func(text string) {
+		fmt.Println(text)
+	}
 
-	var rlt []int
+	stringLoop("传参使用")
 
-	findPrimeNumber(&rlt, 100)
+	go download("", func() {
+		fmt.Println("下载成功")
+		isEnd = true
+	}, func() {
+		fmt.Println("下载失败，当前进度", precent, "%")
+		isEnd = true
+	})
 
-	fmt.Println(res)
-	fmt.Println(rlt)
-
-	val := calcFactorial(5)
-
-	var c int
-
-	c = calcFibonacci(10)
-
-	b := *&c
-
-	fmt.Println(val)
-	fmt.Println(b)
-}
-
-func findPrimeNumber(slice *[]int, max int) {
-	for i := 1; i < max; i++ {
-		if i == 2 {
-			*slice = append(*slice, i)
-			continue
+	for {
+		if precent == 10 {
+			isEnd = true
+			time.Sleep(20 * time.Second)
 		}
 
-		flag := false
+		if isEnd {
+			break
+		} else {
+			time.Sleep(1 * time.Second)
+			fmt.Println("当前进度", precent, "%")
+		}
+	}
 
-		for j := 2; j < i; j++ {
-			if i%j == 0 {
-				flag = true
-				break
+}
+
+func download(url string, onSuccess func(), onFail func()) {
+	for {
+		if isEnd {
+			if precent != 100 {
+				onFail()
 			}
+
+			break
 		}
 
-		if !flag {
-			*slice = append(*slice, i)
+		time.Sleep(1 * time.Second)
+		precent += 1
+
+		if precent >= 100 {
+			onSuccess()
 		}
-
-		flag = false
 	}
-}
-
-func calcFactorial(n int) (result int) {
-	if n > 0 {
-		return n * calcFactorial(n-1)
-	}
-
-	return 1
-}
-
-func calcFibonacci(n int) (result int) {
-	if n == 1 || n == 2 {
-		return 1
-	}
-
-	return calcFibonacci(n-1) + calcFibonacci(n-2)
 }

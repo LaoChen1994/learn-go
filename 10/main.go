@@ -1,63 +1,59 @@
 package main
 
-import (
-	"fmt"
-	"time"
-)
-
-var precent int = 0
-var isEnd = false
+import "fmt"
 
 func main() {
-	func(text string) {
-		fmt.Println(text)
-	}("立即使用")
+	name, carrer, gender, hp, mp := createPlayer("西瓜太郎", "战士", "男")
+	fmt.Println(name, carrer, gender, hp, mp)
 
-	stringLoop := func(text string) {
-		fmt.Println(text)
-	}
+	var warriorCtr = playerCreate("战士")
+	var masterCtr = playerCreate("法师")
 
-	stringLoop("传参使用")
+	_, _, _, h1, m1 := warriorCtr("西瓜太郎2", "男")
+	_, _, _, h2, m2 := warriorCtr("西瓜太郎3", "女")
 
-	go download("", func() {
-		fmt.Println("下载成功")
-		isEnd = true
-	}, func() {
-		fmt.Println("下载失败，当前进度", precent, "%")
-		isEnd = true
-	})
+	fmt.Println("h1 ->", h1, "h2 ->", h2)
+	fmt.Println("m1 ->", m1, "m2 ->", m2)
 
-	for {
-		if precent == 10 {
-			isEnd = true
-			time.Sleep(20 * time.Second)
-		}
+	h1 -= 20
+	m2 -= 15
 
-		if isEnd {
-			break
-		} else {
-			time.Sleep(1 * time.Second)
-			fmt.Println("当前进度", precent, "%")
-		}
-	}
+	fmt.Println("h1 ->", h1, "h2 ->", h2)
+	fmt.Println("m1 ->", m1, "m2 ->", m2)
 
+	fmt.Println(masterCtr("西瓜太郎4", "女"))
 }
 
-func download(url string, onSuccess func(), onFail func()) {
-	for {
-		if isEnd {
-			if precent != 100 {
-				onFail()
-			}
+func createPlayer(name string, career string, gender string) (string, string, string, int32, int32) {
+	var hp int32 = 0
+	var mp int32 = 0
 
-			break
-		}
+	switch career {
+	case "战士":
+		hp = 150
+		mp = 80
+	case "法师":
+		hp = 100
+		mp = 100
+	}
 
-		time.Sleep(1 * time.Second)
-		precent += 1
+	return name, career, gender, hp, mp
+}
 
-		if precent >= 100 {
-			onSuccess()
-		}
+func playerCreate(career string) func(name string, gender string) (string, string, string, int32, int32) {
+	var hp int32 = 0
+	var mp int32 = 0
+
+	switch career {
+	case "战士":
+		hp = 150
+		mp = 80
+	case "法师":
+		hp = 100
+		mp = 100
+	}
+
+	return func(name string, gender string) (string, string, string, int32, int32) {
+		return name, career, gender, hp, mp
 	}
 }
