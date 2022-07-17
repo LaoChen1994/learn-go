@@ -58,3 +58,6 @@ func download(url string, onSuccess func(), onFail func()) {
 
 		if precent >= 100 {
 			onSuccess()
+		}
+	}
+}
