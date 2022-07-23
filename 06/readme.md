@@ -6,7 +6,7 @@
    
    `for init; condition;post {}`
 
-
+   `for _, v := range s {}`
 
 2. 一个杨辉三角形的例子
    

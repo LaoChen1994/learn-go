@@ -6,6 +6,7 @@ type LearnCode interface {
 	LearnBasic() string
 	StartCoding(code string) string
 	FindWork(company string) string
+	init()
 }
 
 type StudyGo struct {
@@ -24,11 +25,16 @@ func (coder StudyGo) FindWork(company string) string {
 	return "去" + company + "写" + coder.language
 }
 
+func (coder *StudyGo) init() {
+	coder.language = "go"
+}
+
 func main() {
 	var goer LearnCode
 
 	goer = new(StudyGo)
-	
+	goer.init()
+
 	fmt.Println(goer.LearnBasic())
 	fmt.Println(goer.StartCoding("Hello World"))
 	fmt.Println(goer.FindWork("bytedance"))
