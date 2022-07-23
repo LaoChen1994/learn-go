@@ -28,7 +28,7 @@ func main() {
 	var goer LearnCode
 
 	goer = new(StudyGo)
-
+	
 	fmt.Println(goer.LearnBasic())
 	fmt.Println(goer.StartCoding("Hello World"))
 	fmt.Println(goer.FindWork("bytedance"))
