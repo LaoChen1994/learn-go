@@ -10,4 +10,9 @@
 | 数组/切片集合         | [readme](./07/readme.md) |     |
 | 函数——声明、调用、递归    | [readme](./08/readme.md) |     |
 | 函数二—匿名函数声明和调用   | [readme](./09/readme.md) |     |
-| 函数三—闭包写法        | [readme](./10/readme.md) |     |
+| 结构体一—定义和使用        | [readme](./11/readme.md) |     |
+| 结构体二—构造对象方法Receiver        | [readme](./12/readme.md) |     |
+| 结构体三—继承        | [readme](./13/readme.md) |     |
+| 接口一—接口的使用和定义        | [readme](./14/readme.md) |     |
+| 接口二—泛型和断言       | [readme](./15/readme.md) |     |
+
