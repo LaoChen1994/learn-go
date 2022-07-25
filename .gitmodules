@@ -1,0 +1,3 @@
+[submodule "18_package"]
+	path = 18_package
+	url = https://github.com/LaoChen1994/test_go_module.git
