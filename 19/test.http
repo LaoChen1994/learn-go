@@ -1,0 +1,22 @@
+### path: /
+POST http://127.0.0.1:8208
+Content-Type: application/json
+{
+    "name": "小王",
+    "age": 20,
+    "gender": 1
+}
+
+
+### insert
+POST http://127.0.0.1:8208/insert
+Content-Type: application/json
+
+{
+    "name": "小王",
+    "age": 18,
+    "gender": 1
+}
+
+### query
+GET http://127.0.0.1:8208/query
