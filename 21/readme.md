@@ -1,109 +1,135 @@
-# 文件操作
+# 持久化存储之数据库
 
-## 目标
+本章主要通过数据库的增删改查来实现数据的持久化，一个简单的demo
 
-目标：实现一个从命令行获取参数，最终保存到文件的过程
+## 安装第三方包
 
-## 获取命令行参数
+1. 初始化一个 go 的项目`go mod init`
+2. 使用`go install/get`来安装对应的第三方依赖
 
-1. 使用`os.Args`这个方法即可
-2. 例子代码
+```bash
+# 初始化依赖
+go mod init sql-exp
 
-```go
-package main
-
-import (
-	"fmt"
-	"os"
-)
-
-func main() {
-	args := os.Args[1:]
-	fmt.Println(args)
-}
+# 安装第三方包
+go get -u github.com/go-sql-driver/mysql
 ```
 
-## 获取文件信息
+## 使用 mysql 包进行数据库操作
 
-### 用到的包
+具体的使用方法可以参考开源包的官方文档: [go-sql-driver](https://github.com/go-sql-driver/mysql#usage)
 
-创建和获取文件信息需要用到的包和函数：
-+ 包：os
-+ 相关方法：`Stat`,`IsNotExist`,`Create`
+### 数据库的连接
 
-### 创建流程
-+ 先获取文件
-+ 文件不存在则创建文件
-+ 如果文件存在且是个文件夹就抛出错误
+引用包：`database/sql` 和 `github.com/go-sql-driver/mysql`
 
-```go
-func createFile(filePath string) {
-	fileInfo, err := os.Stat(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			file, err := os.Create(filePath)
-
-			if err != nil {
-				fmt.Println("创建文件失败, ", err)
-				panic(err)
-			}
-
-			file.Close()
-			return
-		} else {
-			panic(err)
-		}
-	}
-
-	if fileInfo.IsDir() {
-		panic("已存在文件为文件夹，请确认路径")
-	}
-}
-```
-
-### 读取文件
-
-**具体步骤**：
-1. 打开文件，这里有三个参数
-   1. 文件地址
-   2. 打开的方式，只读/只写/读写等，参见os的枚举
-   3. 权限：可读可写可执行
-2. 直接用`file.Write`即可
+创建步骤：
+1. 使用`sql.Open`打开数据库
+2. 对`db`进行参数的设置
 
 ```go
-func main() {
-	args := os.Args[1:]
-	var filePath = "E:/Learn/learn-go/21/1.txt"
-
-	file, err := os.OpenFile(filePath, os.O_APPEND, os.ModePerm)
-
+func connectDB() *sql.DB {
+	db, err := sql.Open("mysql", "root:123456@/students")
 	if err != nil {
+		fmt.Println("数据库链接错误", err)
 		panic(err)
 	}
 
-	str := strings.Join(args, " ") + "\n"
-	file.Write([]byte(str))
-	file.Close()
-}
+	// 重用连接的最大时间
+	db.SetConnMaxLifetime(time.Hour * 1)
+	// 最大连接数量
+	db.SetMaxOpenConns(5)
+	// 最大空闲数量
+	db.SetMaxIdleConns(5)
 
+	fmt.Println("链接成功")
+
+	return db
+}
 ```
 
+### 数据库数据库的增删改查
 
-### 读取文件
+#### 插入数据
 
-使用`ioutil`来进行文件的读取
-
-例子：
+数据修改操作：
+1. 使用`Prepare`输入需要预执行的sql语句
+2. 通过`prepare.Exec`方法对占位的参数进行填充
+3. 完成相关操作
 
 ```go
-content, error := ioutil.ReadFile(filePath)
+func add(db *sql.DB, stu *student) int64 {
+	prepare, _ := db.Prepare("INSERT INTO gx_students SET name=?,age=?,grade=?,phone_number=?")
+	res, _ := prepare.Exec(stu.name, stu.age, stu.grade, stu.phone_number)
 
-if error != nil {
-	panic(error)
+	idVal, _ := res.LastInsertId()
+
+	fmt.Println("插入数据id为", idVal)
+
+	return idVal
 }
+```
 
-val := string(content)
+#### 修改数据
 
-fmt.Println(val)
+```go
+func update(db *sql.DB, stu *student, id int32) {
+	prepare, _ := db.Prepare(`Update gx_students SET name=?,age=?,grade=? where id=?`)
+	prepare.Exec(stu.name, stu.age, stu.grade, id)
 
+	fmt.Println("更新成功")
+}
+```
+
+#### 删除数据
+
+```go
+func del(db *sql.DB, id int64) {
+	prepare, _ := db.Prepare("DELETE FROM gx_students where id=?")
+	res, _ := prepare.Exec(id)
+
+	affectLine, _ := res.RowsAffected()
+
+	fmt.Println("删除数据", string(affectLine), '条')
+}
+```
+
+#### 查询数据
+
+查询方法：
+1. 使用`db.Query`输入sql语句进行执行
+2. 对查询出来的`rows`使用 `for rows.Next()`查询是否还有吓一条数据
+3. 使用`rows.Scan`逐条获取下条数据内容，，**在使用Scan**的时候需要传入和表中数量一样字段的引用，进行数据的接收处理后，整理成切片输出
+
+```go
+func query(db *sql.DB) []student {
+	var stus []student
+
+	rows, err := db.Query(`Select * from gx_students`)
+
+	if err != nil {
+		fmt.Println("err ->", err)
+		panic(err)
+	}
+
+	var stu student
+
+	var (
+		createAt interface{}
+		updateAt interface{}
+		deleteAt interface{}
+	)
+
+	for rows.Next() {
+		fmt.Println()
+		if err := rows.Scan(&stu.id, &stu.name, &stu.age, &createAt, &stu.phone_number, &deleteAt, &stu.grade, &updateAt); err != nil {
+			fmt.Println("数据库查询错误", err)
+			panic(err)
+		}
+
+		stus = append(stus, stu)
+	}
+
+	return stus
+}
 ```

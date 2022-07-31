@@ -1,135 +1,91 @@
-# 持久化存储之数据库
+# 并发（一）——GO语言并发初探
 
-本章主要通过数据库的增删改查来实现数据的持久化，一个简单的demo
+## 基本概念
 
-## 安装第三方包
+### 并发与并行
 
-1. 初始化一个 go 的项目`go mod init`
-2. 使用`go install/get`来安装对应的第三方依赖
+并发：在一个CPU上通过时间分片执行不同的任务，同时运行多个任务
+并行：多个CPU同时执行多个任务
 
-```bash
-# 初始化依赖
-go mod init sql-exp
+### 线程和协程
 
-# 安装第三方包
-go get -u github.com/go-sql-driver/mysql
-```
+进程：一个应用占用一个进程，在一个进程中可以有多个线程来执行操作，进程一旦终止，进程中的线程和协程也将终止
 
-## 使用 mysql 包进行数据库操作
+线程：线程是操作系统的资源，创建、切换、停止由操作系统控制
 
-具体的使用方法可以参考开源包的官方文档: [go-sql-driver](https://github.com/go-sql-driver/mysql#usage)
+协程：创建、切换停止由用户操作，更轻量化，一个线程上可以跑多个协程，**在GO语言中，并发通过协程来实现，大量IO密集型的操作适合协程进行处理**
 
-### 数据库的连接
+## 并发任务的启动
 
-引用包：`database/sql` 和 `github.com/go-sql-driver/mysql`
+启动方式：在对应的执行语句之前增加`go`关键字即可
 
-创建步骤：
-1. 使用`sql.Open`打开数据库
-2. 对`db`进行参数的设置
-
+**注意点**：因为我们不知道什么时候协程会执行结束，这里简单粗暴的通过一个延迟来让其能够一直运行到我们期望的`testGoFunc`结束
 ```go
-func connectDB() *sql.DB {
-	db, err := sql.Open("mysql", "root:123456@/students")
-	if err != nil {
-		fmt.Println("数据库链接错误", err)
-		panic(err)
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	go testGoFunc(1)
+	go testGoFunc(2)
+	time.Sleep(time.Second * 10)
+
+	fmt.Println("结束")
+}
+
+func testGoFunc(delay int32) {
+	for i := 0; i < 10; i++ {
+		fmt.Printf("当前是%d延迟，第%d次运行\n", delay, i)
+		time.Sleep(time.Second * time.Duration(delay))
 	}
-
-	// 重用连接的最大时间
-	db.SetConnMaxLifetime(time.Hour * 1)
-	// 最大连接数量
-	db.SetMaxOpenConns(5)
-	// 最大空闲数量
-	db.SetMaxIdleConns(5)
-
-	fmt.Println("链接成功")
-
-	return db
 }
 ```
 
-### 数据库数据库的增删改查
+### sync的使用
 
-#### 插入数据
+上述代码中通过一个延迟时间来保证协程能够执行结束，在实际工作中，无法预想协程内的程序多久能执行完毕，GO中可以使用`sync`这个包来保证
 
-数据修改操作：
-1. 使用`Prepare`输入需要预执行的sql语句
-2. 通过`prepare.Exec`方法对占位的参数进行填充
-3. 完成相关操作
+**使用方法**：
+1. 声明一个`sync.WaitGroup`的变量
+2. 在主线程中调用`goRoutineWait.Add`声明需要开启几个`GoRoutine`
+3. 在协程中通过`goRoutineWait.Done()`来标记该协程完成
+4. 在主线程中通过`goRoutinueWait.Wait()`表示在这里一直等到协程执行结束
+
+**例子**：
 
 ```go
-func add(db *sql.DB, stu *student) int64 {
-	prepare, _ := db.Prepare("INSERT INTO gx_students SET name=?,age=?,grade=?,phone_number=?")
-	res, _ := prepare.Exec(stu.name, stu.age, stu.grade, stu.phone_number)
+package main
 
-	idVal, _ := res.LastInsertId()
+import (
+	"fmt"
+	"sync"
+	"time"
+)
 
-	fmt.Println("插入数据id为", idVal)
+var goRoutineWait sync.WaitGroup
 
-	return idVal
+func main() {
+	fmt.Println("开始")
+	goRoutineWait.Add(2)
+
+	defer fmt.Println("结束")
+	defer goRoutineWait.Wait()
+
+	go testGoFunc(1)
+	go testGoFunc(2)
+
 }
-```
 
-#### 修改数据
-
-```go
-func update(db *sql.DB, stu *student, id int32) {
-	prepare, _ := db.Prepare(`Update gx_students SET name=?,age=?,grade=? where id=?`)
-	prepare.Exec(stu.name, stu.age, stu.grade, id)
-
-	fmt.Println("更新成功")
-}
-```
-
-#### 删除数据
-
-```go
-func del(db *sql.DB, id int64) {
-	prepare, _ := db.Prepare("DELETE FROM gx_students where id=?")
-	res, _ := prepare.Exec(id)
-
-	affectLine, _ := res.RowsAffected()
-
-	fmt.Println("删除数据", string(affectLine), '条')
-}
-```
-
-#### 查询数据
-
-查询方法：
-1. 使用`db.Query`输入sql语句进行执行
-2. 对查询出来的`rows`使用 `for rows.Next()`查询是否还有吓一条数据
-3. 使用`rows.Scan`逐条获取下条数据内容，，**在使用Scan**的时候需要传入和表中数量一样字段的引用，进行数据的接收处理后，整理成切片输出
-
-```go
-func query(db *sql.DB) []student {
-	var stus []student
-
-	rows, err := db.Query(`Select * from gx_students`)
-
-	if err != nil {
-		fmt.Println("err ->", err)
-		panic(err)
+func testGoFunc(delay int32) {
+	defer goRoutineWait.Done()
+	for i := 0; i < 3; i++ {
+		fmt.Printf("当前是%d延迟，第%d次运行\n", delay, i)
+		time.Sleep(time.Second * time.Duration(delay))
 	}
-
-	var stu student
-
-	var (
-		createAt interface{}
-		updateAt interface{}
-		deleteAt interface{}
-	)
-
-	for rows.Next() {
-		fmt.Println()
-		if err := rows.Scan(&stu.id, &stu.name, &stu.age, &createAt, &stu.phone_number, &deleteAt, &stu.grade, &updateAt); err != nil {
-			fmt.Println("数据库查询错误", err)
-			panic(err)
-		}
-
-		stus = append(stus, stu)
-	}
-
-	return stus
 }
 ```
+
+如果上述的协程只运行一次，也可以通过匿名函数IIFE来执行，这样会使代码更加精简

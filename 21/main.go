@@ -1,59 +1,116 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"strings"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-func main() {
-	args := os.Args[1:]
-	fmt.Println(args)
-	var filePath = "E:/Learn/learn-go/21/1.txt"
+type student struct {
+	id           int32
+	name         string
+	age          int32
+	grade        int32
+	phone_number string
+}
 
-	createFile(filePath)
-
-	file, err := os.OpenFile(filePath, os.O_APPEND, os.ModePerm)
-
-	content, error := ioutil.ReadFile(filePath)
-
-	if error != nil {
-		panic(error)
-	}
-
-	val := string(content)
-
-	fmt.Println(val)
-
+func connectDB() *sql.DB {
+	db, err := sql.Open("mysql", "root:123456@/students")
 	if err != nil {
+		fmt.Println("数据库链接错误", err)
 		panic(err)
 	}
 
-	str := strings.Join(args, " ") + "\n"
-	file.Write([]byte(str))
-	file.Close()
+	// 重用连接的最大时间
+	db.SetConnMaxLifetime(time.Hour * 1)
+	// 最大连接数量
+	db.SetMaxOpenConns(5)
+	// 最大空闲数量
+	db.SetMaxIdleConns(5)
+
+	fmt.Println("链接成功")
+
+	return db
 }
 
-func createFile(filePath string) {
-	fileInfo, err := os.Stat(filePath)
+func add(db *sql.DB, stu *student) int64 {
+	prepare, _ := db.Prepare("INSERT INTO gx_students SET name=?,age=?,grade=?,phone_number=?")
+	res, _ := prepare.Exec(stu.name, stu.age, stu.grade, stu.phone_number)
+
+	idVal, _ := res.LastInsertId()
+
+	fmt.Println("插入数据id为", idVal)
+
+	return idVal
+}
+
+func del(db *sql.DB, id int64) {
+	prepare, _ := db.Prepare("DELETE FROM gx_students where id=?")
+	res, _ := prepare.Exec(id)
+
+	affectLine, _ := res.RowsAffected()
+
+	fmt.Println("删除数据", string(affectLine), '条')
+}
+
+func update(db *sql.DB, stu *student, id int32) {
+	prepare, _ := db.Prepare(`Update gx_students SET name=?,age=?,grade=? where id=?`)
+	prepare.Exec(stu.name, stu.age, stu.grade, id)
+
+	fmt.Println("更新成功")
+}
+
+func query(db *sql.DB) []student {
+	var stus []student
+
+	rows, err := db.Query(`Select * from gx_students`)
+
 	if err != nil {
-		if os.IsNotExist(err) {
-			file, err := os.Create(filePath)
+		fmt.Println("err ->", err)
+		panic(err)
+	}
 
-			if err != nil {
-				fmt.Println("创建文件失败, ", err)
-				panic(err)
-			}
+	var stu student
 
-			file.Close()
-			return
-		} else {
+	var (
+		createAt interface{}
+		updateAt interface{}
+		deleteAt interface{}
+	)
+
+	for rows.Next() {
+		fmt.Println()
+		if err := rows.Scan(&stu.id, &stu.name, &stu.age, &createAt, &stu.phone_number, &deleteAt, &stu.grade, &updateAt); err != nil {
+			fmt.Println("数据库查询错误", err)
 			panic(err)
 		}
+
+		stus = append(stus, stu)
 	}
 
-	if fileInfo.IsDir() {
-		panic("已存在文件为文件夹，请确认路径")
+	return stus
+}
+
+func main() {
+	stu := student{
+		name:         "李四",
+		age:          20,
+		grade:        7,
+		phone_number: "13111111111",
 	}
+
+	db := connectDB()
+
+	id := add(db, &stu)
+
+	stu.name = "王五"
+
+	update(db, &stu, int32(id))
+	del(db, id)
+
+	stus := query(db)
+	fmt.Println(stus)
+
 }
