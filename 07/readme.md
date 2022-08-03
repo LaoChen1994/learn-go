@@ -92,7 +92,9 @@ func main() {
 
 ## 集合的声明与赋值
 
-**注意**：集合的本质是键值对构成的哈希表，通过`key-value`的方式来进行存储
+**注意**：
+    1. 集合的本质是键值对构成的哈希表，通过`key-value`的方式来进行存储
+    2. 使用`new`关键用来申请一片内存空间，返回指向该内存空间的指针，`make`是用来创建`slice`、`map`、`Channel`等内部数据结构的
 
 **声明方式**：`var map_name = make(map[key_type]value_type)`
 
