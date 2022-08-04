@@ -22,4 +22,6 @@
 | 文件操作                       | [readme](./20/readme.md) |      |
 | MySQL 操作                     | [readme](./21/readme.md) |      |
 | 并发（一）GO 语言高并发初探    | [readme](./22/readme.md) |      |
-| 并发（二）同步通道进行并发通信    | [readme](./23/readme.md) |      |
+| 并发（二）GPM并发原理    | [readme](./23/readme.md) |      |
+| 并发（三）同步通道进行并发通信    | [readme](./24/readme.md) |      |
+| 并发（四）缓冲通道进行并发通信    | [readme](./25/readme.md) |      |
