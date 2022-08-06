@@ -26,3 +26,4 @@
 | 并发（三）同步通道进行并发通信    | [readme](./24/readme.md) |      |
 | 并发（四）缓冲通道进行并发通信    | [readme](./25/readme.md) |      |
 | 并发（五）Select的应用    | [readme](./26/readme.md) |      |
+| 并发（六）原子操作和锁操作    | [readme](./27/readme.md) |      |
