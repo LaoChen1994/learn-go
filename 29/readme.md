@@ -119,3 +119,9 @@ fmt.Println(another.Elem().Int())
 fmt.Println(num)
 fmt.Println(another.Type().Kind(), typeOfNum.Kind())
 ```
+
+## 反射的作用
+
+1. 标签的获取
+2. 定义结构体，对应数据库表结构，利用反射编码创建全部数据等
+3. 在运行时动态创建类型实例，而非编译时，使程序更灵活多变
