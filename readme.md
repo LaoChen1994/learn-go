@@ -29,3 +29,4 @@
 | 并发（六）原子操作和锁操作     | [readme](./27/readme.md) |      |
 | 反射（一）基本使用             | [readme](./28/readme.md) |      |
 | 反射（二）结构体、函数、创建实例    | [readme](./29/readme.md) |      |
+| 反射（三）反转控制和依赖注入    | [readme](./30/readme.md) |      |
