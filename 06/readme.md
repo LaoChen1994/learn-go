@@ -44,7 +44,7 @@
    
    ```
 
-## 条件控制与流程控制
+## 条件控制if
 
 1. go中的流程控制语句模板
    
@@ -87,3 +87,42 @@
    ```
 
 3. 使用break和continue可以中断和跳过`for`循环
+
+## 条件控制switch
+
+和其他语言中一样，go中也有switch-case的用法
+
+1. go中switch用法
+
+```go
+	switch num {
+		case 0:
+		case 1:
+			f()
+		case 2:
+			f2()
+	}
+
+```
+
+2. 例子
+
+在go中当匹配到一个case以后直接退出整个`switch`块, 不会再进入到其他的分支逻辑中
+
+如果我们希望继续能走到其他的运行逻辑，可以使用，`fallthrough`关键字来让其继续走到后续的case中
+
+下面的例子中，新用户进来就会附赠一句欢迎光临
+
+```go
+func switchFunc(num int32) {
+	switch num {
+	case 2:
+		fmt.Println("这是老用户了")
+	case 1:
+		fmt.Println("这是第一次来的用户")
+		fallthrough
+	default:
+		fmt.Println("欢迎光临")
+	}
+}
+```

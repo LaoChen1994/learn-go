@@ -8,6 +8,9 @@ func main() {
 	// trigle()
 	findNum()
 
+	switchFunc(1)
+	switchFunc(2)
+
 }
 
 func findNum() {
@@ -64,5 +67,17 @@ func trigle() {
 
 			fmt.Println("")
 		}
+	}
+}
+
+func switchFunc(num int32) {
+	switch num {
+	case 2:
+		fmt.Println("这是老用户了")
+	case 1:
+		fmt.Println("这是第一次来的用户")
+		fallthrough
+	default:
+		fmt.Println("欢迎光临")
 	}
 }
